@@ -28,13 +28,17 @@ def make_address(address, part)
   return address
 end
 
+def remove_commas(str)
+  return str.gsub(/,/, "")
+end
+
 
 
 def get_line1(address)
   output = ""
   address.each do |part|
     if [:number, :house, :house_number, :road].include? part[:label]
-      output += part[:value]
+      output += remove_commas(part[:value])
       output += " "
     end
   end
@@ -48,7 +52,7 @@ def get_line2(address)
   output = ""
   address.each do |part|
     if [:unit, :level, :staircase, :entrance, :po_box].include? part[:label]
-      output += part[:value]
+      output += remove_commas(part[:value])
       output += " "
     end
   end
@@ -62,7 +66,7 @@ def get_city(address)
   output = ""
   address.each do |part|
     if [:city, :suburb, :city_district].include? part[:label]
-      output += part[:value]
+      output += remove_commas(part[:value])
       output += " "
     end
   end
@@ -76,7 +80,7 @@ def get_state(address)
   output = ""
   address.each do |part|
     if [:state, :state_district].include? part[:label]
-      output += part[:value]
+      output += remove_commas(part[:value])
       output += " "
     end
   end
@@ -90,7 +94,7 @@ def get_postcode(address)
   output = ""
   address.each do |part|
     if [:postcode].include? part[:label]
-      output += make_US_postcode_5_digits(part[:value])
+      output += make_US_postcode_5_digits(remove_commas(part[:value]))
       output += " "
     end
   end
@@ -114,7 +118,7 @@ def get_country(address)
   output = ""
   address.each do |part|
     if [:country, :country_region].include? part[:label]
-      output += part[:value]
+      output += remove_commas(part[:value])
       output += " "
     end
   end
@@ -126,33 +130,30 @@ end
 
 def parse_address(row, cols)
   output_address = ""
-  unless row[cols[:display_name]].nil? || row[cols[:display_name]].empty?
-    address = ""
-    address = make_address(address, row[cols[:address]].to_s)
-    address = make_address(address, row[cols[:city]].to_s)
-    address = make_address(address, row[cols[:state]].to_s)
-    address = make_address(address, row[cols[:zip]].to_s)
-    address = make_address(address, row[cols[:country]].to_s)
+  address = ""
+  address = make_address(address, row[cols[:address]].to_s)
+  address = make_address(address, row[cols[:city]].to_s)
+  address = make_address(address, row[cols[:state]].to_s)
+  address = make_address(address, row[cols[:zip]].to_s)
+  address = make_address(address, row[cols[:country]].to_s)
 
 
-    unless address.nil? || address.empty?
-      address.strip!
-      address.gsub!(/,/, "")
-      address.gsub!(/\s+/," ")
-
-      address = Postal::Parser.parse_address(address)
-      unless address.nil?
-        output_address = ""
-        output_address += get_line1(address)
-        output_address += get_line2(address)
-        output_address += get_city(address)
-        output_address += get_state(address)
-        output_address += get_postcode(address)
-        output_address += get_country(address)
-      end
-    end
+  if !address.nil? && !address.empty?
+    address.strip!
+    address.gsub!(/,/, "")
+    address.gsub!(/\s+/," ")
+  else
+    address = nil
   end
-  puts output_address
+
+  address = Postal::Parser.parse_address(address)
+  output_address = ""
+  output_address += get_line1(address)
+  output_address += get_line2(address)
+  output_address += get_city(address)
+  output_address += get_state(address)
+  output_address += get_postcode(address)
+  output_address += get_country(address)
   return output_address
 end
 
@@ -162,5 +163,14 @@ CSV_FILE_PATH = File.join("./input.csv")
 arr = CSV.read("./input.csv", :encoding => 'windows-1251:utf-8')
 #puts arr
 arr.each do |row|
-  parse_address(row, cols)
+  unless row[cols[:display_name]].to_s.strip.empty?
+    output_row = ""
+    output_row += remove_commas(row[cols[:display_name]].to_s) + ","
+    output_row += remove_commas(row[cols[:email1]].to_s) + ","
+    output_row += remove_commas(row[cols[:phone1]].to_s) + ","
+    output_row += remove_commas(row[cols[:phone2]].to_s) + ","
+    output_row += parse_address(row, cols)
+    output_row += remove_commas(row[cols[:notes]].to_s) + " " + remove_commas(row[cols[:webpage]].to_s)
+    puts output_row
+  end
 end
