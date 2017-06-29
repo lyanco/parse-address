@@ -28,7 +28,80 @@ def make_address(address, part)
   return address
 end
 
-def process_postcode(postcode)
+
+
+def get_line1(address)
+  output = ""
+  address.each do |part|
+    if [:number, :house, :house_number, :road].include? part[:label]
+      output += part[:value]
+      output += " "
+    end
+  end
+  output.strip!
+  output += ","
+  output = output.split(" ").map(&:capitalize).join(' ')
+  return output
+end
+
+def get_line2(address)
+  output = ""
+  address.each do |part|
+    if [:unit, :level, :staircase, :entrance, :po_box].include? part[:label]
+      output += part[:value]
+      output += " "
+    end
+  end
+  output.strip!
+  output += ","
+  output = output.split(" ").map(&:capitalize).join(' ')
+  return output
+end
+
+def get_city(address)
+  output = ""
+  address.each do |part|
+    if [:city, :suburb, :city_district].include? part[:label]
+      output += part[:value]
+      output += " "
+    end
+  end
+  output.strip!
+  output += ","
+  output = output.split(" ").map(&:capitalize).join(' ')
+  return output
+end
+
+def get_state(address)
+  output = ""
+  address.each do |part|
+    if [:state, :state_district].include? part[:label]
+      output += part[:value]
+      output += " "
+    end
+  end
+  output.strip!
+  output += ","
+  output = output.upcase
+  return output
+end
+
+def get_postcode(address)
+  output = ""
+  address.each do |part|
+    if [:postcode].include? part[:label]
+      output += make_US_postcode_5_digits(part[:value])
+      output += " "
+    end
+  end
+  output.strip!
+  output += ","
+  output = output.upcase
+  return output
+end
+
+
+def make_US_postcode_5_digits(postcode)
   if /^\d{4}$/ =~ postcode
     postcode = '0' + postcode
   elsif /^\d{3}$/ =~ postcode
@@ -37,17 +110,30 @@ def process_postcode(postcode)
   return postcode
 end
 
+def get_country(address)
+  output = ""
+  address.each do |part|
+    if [:country, :country_region].include? part[:label]
+      output += part[:value]
+      output += " "
+    end
+  end
+  output.strip!
+  output += ","
+  output = output.upcase
+  return output
+end
 
-CSV_FILE_PATH = File.join("./input.csv")
-arr = CSV.read("./input.csv", :encoding => 'windows-1251:utf-8')
-#puts arr
-arr.each do |row|
+def parse_address(row, cols)
+  output_address = ""
   unless row[cols[:display_name]].nil? || row[cols[:display_name]].empty?
     address = ""
     address = make_address(address, row[cols[:address]].to_s)
     address = make_address(address, row[cols[:city]].to_s)
     address = make_address(address, row[cols[:state]].to_s)
     address = make_address(address, row[cols[:zip]].to_s)
+    address = make_address(address, row[cols[:country]].to_s)
+
 
     unless address.nil? || address.empty?
       address.strip!
@@ -56,20 +142,25 @@ arr.each do |row|
 
       address = Postal::Parser.parse_address(address)
       unless address.nil?
-        output_row = ""
-        address.each do |part|
-          output_row += " " unless output_row.empty?
-          if part[:label] == :state
-            output_row += part[:value].upcase
-          elsif part[:label] == :postcode
-            output_row += process_postcode(part[:value].upcase)
-          else
-            output_row += part[:value].split(" ").map(&:capitalize).join(' ')
-          end
-          output_row += "," unless part[:label] == :house_number
-        end
-        puts output_row
+        output_address = ""
+        output_address += get_line1(address)
+        output_address += get_line2(address)
+        output_address += get_city(address)
+        output_address += get_state(address)
+        output_address += get_postcode(address)
+        output_address += get_country(address)
       end
     end
   end
+  puts output_address
+  return output_address
+end
+
+
+
+CSV_FILE_PATH = File.join("./input.csv")
+arr = CSV.read("./input.csv", :encoding => 'windows-1251:utf-8')
+#puts arr
+arr.each do |row|
+  parse_address(row, cols)
 end
