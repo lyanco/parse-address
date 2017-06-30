@@ -138,19 +138,20 @@ def get_state(address)
 end
 
 def get_postcode(address)
-  output = ""
-  address.each do |part|
-    if [:postcode].include? part[:label]
-      output += make_US_postcode_5_digits(remove_commas(part[:value]))
-      output += " "
-    end
-  end
+  output = combine_fields(address, [:postcode])
   output.strip!
+  output = make_US_postcode_5_digits(output)
   output = output.upcase
   output += ","
   return output
 end
 
+def get_country(address)
+  output = combine_fields(address, [:country, :country_region])
+  output = output.upcase
+  output += ","
+  return output
+end
 
 def make_US_postcode_5_digits(postcode)
   if /^\d{4}$/ =~ postcode
@@ -159,13 +160,6 @@ def make_US_postcode_5_digits(postcode)
     postcode = '00' + postcode
   end
   return postcode
-end
-
-def get_country(address)
-  output = combine_fields(address, [:country, :country_region])
-  output = output.upcase
-  output += ","
-  return output
 end
 
 def parse_address(row, cols)
@@ -178,7 +172,7 @@ def parse_address(row, cols)
   address = make_address(address, row[cols[:country]].to_s)
 
   address.strip!
-  address.gsub!(/,/, "")
+  address = remove_commas(address)
   address.squish!
 
   if address.empty? || address.blank?
@@ -202,7 +196,7 @@ CSV_FILE_PATH = File.join("./input.csv")
 arr = CSV.read("./input.csv", :encoding => 'windows-1251:utf-8')
 #puts arr
 arr.each do |row|
-  unless row[COLS[:display_name]].to_s.strip.empty?
+  unless row[COLS[:display_name]].to_s.strip.blank?
     output_row = ""
     output_row += remove_commas(row[COLS[:display_name]].to_s) + ","
     output_row += remove_commas(row[COLS[:email1]].to_s) + ","
