@@ -162,14 +162,14 @@ def make_US_postcode_5_digits(postcode)
   return postcode
 end
 
-def parse_address(row, cols)
+def parse_address(row)
   output_address = ""
   address = ""
-  address = make_address(address, row[cols[:address]].to_s)
-  address = make_address(address, row[cols[:city]].to_s)
-  address = make_address(address, row[cols[:state]].to_s)
-  address = make_address(address, row[cols[:zip]].to_s)
-  address = make_address(address, row[cols[:country]].to_s)
+  address = make_address(address, row[COLS[:address]].to_s)
+  address = make_address(address, row[COLS[:city]].to_s)
+  address = make_address(address, row[COLS[:state]].to_s)
+  address = make_address(address, row[COLS[:zip]].to_s)
+  address = make_address(address, row[COLS[:country]].to_s)
 
   address.strip!
   address = remove_commas(address)
@@ -202,7 +202,7 @@ arr.each do |row|
     output_row += remove_commas(row[COLS[:email1]].to_s) + ","
     output_row += remove_commas(row[COLS[:phone1]].to_s) + ","
     output_row += remove_commas(row[COLS[:phone2]].to_s) + ","
-    output_row += parse_address(row, COLS)
+    output_row += parse_address(row)
     output_row += remove_commas(row[COLS[:notes]].to_s) + " " + remove_commas(row[COLS[:webpage]].to_s)
     puts output_row
   end
